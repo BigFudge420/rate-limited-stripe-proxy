@@ -27,3 +27,5 @@ const buildHeaders = (req : Request) => {
 
     return headers
 }
+
+export default buildHeaders
