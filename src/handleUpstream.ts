@@ -16,7 +16,7 @@ const handleUpstream = async (req : Request, res : Response, start = Date.now() 
     const upstreamURL = buildURL(req)
     const headers = buildHeaders(req)
 
-    const body = req.body.length ? req.body : undefined
+    const body = req.body && req.body.length > 0 ? req.body : undefined
 
     res.on('finish', () => {
         log(req, res.statusCode, start)
@@ -34,18 +34,19 @@ const handleUpstream = async (req : Request, res : Response, start = Date.now() 
 
         res.status(upstreamRes.status)
 
-        upstreamRes.headers.forEach((k , v) => {
-            if (k === 'transfer-encoding') return
+        upstreamRes.headers.forEach((v, k) => {
+            if (k.toLowerCase() === 'transfer-encoding') return
             res.setHeader(k, v)
         })
 
         const buffer = Buffer.from(await upstreamRes.arrayBuffer())
         res.send(buffer)
     }
-    catch (err : any) {
+    catch (err) {
         clearTimeout(timeout)
 
-        if (err.name === 'AbortError') {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+            controller.signal.onabort = null
             res.status(504).json({error : "Upstream timeout"})
         }
         else {
