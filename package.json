@@ -1,0 +1,35 @@
+{
+  "name": "rate-limited-stripe-proxy",
+  "version": "1.0.0",
+  "description": "A single-instance Node.js proxy that forwards requests to the Stripe API while enforcing Stripe’s rate limits using a custom token bucket implementation.",
+  "homepage": "https://github.com/BigFudge420/rate-limited-stripe-proxy#readme",
+  "bugs": {
+    "url": "https://github.com/BigFudge420/rate-limited-stripe-proxy/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BigFudge420/rate-limited-stripe-proxy.git"
+  },
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "license": "ISC",
+  "author": "bigfudge",
+  "type": "module",
+  "main": "dist/server.js",
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.3",
+    "dotenv": "^17.2.3",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.7.4",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
