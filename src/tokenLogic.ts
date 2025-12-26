@@ -1,8 +1,8 @@
 import config from "./config"
 
-const capacity = config.rateLimitPerSec
-const refillRate = capacity
-let tokens : number = capacity
+const CAPACITY = config.rateLimitPerSec
+const REFILL_RATE = CAPACITY
+let tokens : number = CAPACITY
 let lastRefil : number = Date.now()
 
 const refillTokens = (now = Date.now()) => {
@@ -10,8 +10,8 @@ const refillTokens = (now = Date.now()) => {
     
     if (elapsedTimeMS <= 0) return
 
-    const refill = (elapsedTimeMS/1000) * refillRate
-    tokens = Math.min(capacity, refill) 
+    const refill = (elapsedTimeMS/1000) * REFILL_RATE
+    tokens = Math.min(CAPACITY, refill) 
     lastRefil = now
 }
 
