@@ -11,7 +11,7 @@ const refillTokens = (now = Date.now()) => {
     if (elapsedTimeMS <= 0) return
 
     const refill = (elapsedTimeMS/1000) * REFILL_RATE
-    tokens = Math.min(CAPACITY, refill) 
+    tokens = Math.min(CAPACITY, refill + tokens) 
     lastRefil = now
 }
 
