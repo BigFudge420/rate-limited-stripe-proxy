@@ -4,15 +4,20 @@ import handleUpstream from "./handleUpstream"
 import { enqueue } from "./enqueueLogic"
 import processQueue from "./processQueue"
 
-const proxyController = (req : Request, res : Response) => {
-    if (tryConsume()) {
-        handleUpstream(req, res)
+const proxyController = (req : Request, res : Response, next : NextFunction) => {
+    try {
+        if (tryConsume()) {
+            handleUpstream(req, res)
+        }
+        else {
+            enqueue(req, res)
+        }
+    
+        processQueue()
+    }catch (err) {
+        next(err)
     }
-    else {
-        enqueue(req, res)
-    }
-
-    processQueue()
+    
 }
 
 export default proxyController
