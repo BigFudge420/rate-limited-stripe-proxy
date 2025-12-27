@@ -290,219 +290,157 @@ UPSTREAM_BASE_URL=http://localhost:4000
 
 ---
 
-### Test 1: Rate Limiting Accuracy ⚡
+### Test 1 — Rate Limiting Accuracy ⚡
 
-Verify that the proxy enforces the configured rate limit correctly.
+**Goal:** Verify the proxy enforces the configured rate limit.
 
-**Send 900 requests instantly:**
 ```bash
-# This script sends 900 requests and measures total time
-time (
-  for i in {1..900}; do
-    curl -s -X POST http://localhost:3000/proxy/stripe/v1/customers \
-      -H "Content-Type: application/x-www-form-urlencoded" \
-      -d "email=customer$i@example.com" > /dev/null &
-  done
-  wait
-)
+hey -n 900 -c 900 -m POST \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "email=test@example.com" \
+  http://localhost:3000/proxy/stripe/v1/customers
 ```
 
-**Expected behavior:**
-- Total time should be approximately **10 seconds** (900 requests ÷ 90 req/sec)
-- All 900 requests should complete successfully
-- No 429 errors should be returned
+Expected:
 
-**Monitor token bucket state:**
-
-Add this to `tokenLogic.ts` for debugging:
-```typescript
-export const getTokenState = () => ({
-  tokens,
-  capacity: CAPACITY,
-  lastRefill: lastRefil
-});
-```
+- Total time ≈ **10 seconds**
+- Requests/sec ≈ **90–95**
+- All responses return **200**
 
 ---
 
-### Test 2: Queue Overflow Handling 🚨
+### Test 2 — Sustained Rate Enforcement 🕒
 
-Verify that the queue rejects requests when full.
-
-**Send 1200 requests instantly:**
 ```bash
-# Send more requests than queue can hold
-results_file="test_results.txt"
-> $results_file
-
-for i in {1..1200}; do
-  (
-    response=$(curl -s -w "\n%{http_code}" -X POST http://localhost:3000/proxy/stripe/v1/customers \
-      -H "Content-Type: application/x-www-form-urlencoded" \
-      -d "email=customer$i@example.com")
-    status=$(echo "$response" | tail -n1)
-    echo "$status" >> $results_file
-  ) &
-done
-wait
-
-# Count status codes
-echo "Results:"
-echo "200 OK: $(grep -c "^200$" $results_file)"
-echo "429 Too Many Requests: $(grep -c "^429$" $results_file)"
-```
-
-**Expected behavior:**
-- Approximately **1000 requests** should succeed (queue capacity)
-- Approximately **200 requests** should receive `429` status
-- 429 responses should include `Retry-After: 10` header
-
-**Verify 429 response:**
-```bash
-curl -i -X POST http://localhost:3000/proxy/stripe/v1/customers \
+hey -z 10s -c 200 -m POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "email=overflow@example.com"
+  -d "email=test@example.com" \
+  http://localhost:3000/proxy/stripe/v1/customers
 ```
 
-**Expected 429 response:**
-```
-HTTP/1.1 429 Too Many Requests
-Retry-After: 10
-Content-Type: application/json
+Expected:
 
-{"error":"Rate limit exceeded"}
-```
+- Requests/sec ≈ **90–95**
+- Total requests ≈ **900**
 
 ---
 
-### Test 3: Timeout Handling ⏱️
+### Test 3 — Queue Overflow Handling 🚨
 
-Verify the proxy returns 504 when upstream is slow.
-
-**Using the mock server's slow endpoint:**
 ```bash
-curl -i -X POST http://localhost:3000/proxy/stripe/v1/slow \
+hey -n 1200 -c 1200 -m POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "test=timeout"
+  -d "email=overflow@example.com" \
+  http://localhost:3000/proxy/stripe/v1/customers
 ```
 
-**Expected behavior:**
-- Proxy returns `504 Gateway Timeout` after **5 seconds** (configured timeout)
-- Does not wait for the full 10-second upstream delay
+Expected:
 
-**Expected 504 response:**
-```
-HTTP/1.1 504 Gateway Timeout
-Content-Type: application/json
-
-{"error":"Upstream timeout"}
-```
-
-**Measure actual timeout duration:**
-```bash
-time curl -X POST http://localhost:3000/proxy/stripe/v1/slow \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "test=timeout"
-```
-
-Should complete in approximately **5 seconds**, not 10.
+- ~1000 × **200 OK**
+- ~200 × **429 Too Many Requests**
 
 ---
 
-### Test 4: Passthrough Correctness 🔄
+### Test 4 — Upstream Timeout Handling ⏱️
 
-Verify headers and response bodies are correctly forwarded.
-
-**Test custom header forwarding:**
 ```bash
-curl -i -X POST http://localhost:3000/proxy/stripe/v1/customers \
+hey -n 5 -c 5 -m POST \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "test=timeout" \
+  http://localhost:3000/proxy/stripe/v1/slow
+```
+
+Expected:
+
+- All **504 Gateway Timeout**
+- Duration ≈ **5s**
+
+---
+
+### Test 5 — Header & Body Passthrough 🔄
+
+```bash
+hey -n 10 -c 2 -m POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -H "X-Custom-Header: test-value" \
   -H "X-Request-Id: req_12345" \
-  -d "email=passthrough@example.com"
+  -d "email=passthrough@example.com" \
+  http://localhost:3000/proxy/stripe/v1/customers
 ```
 
-**Check mock server logs** to verify custom headers are received.
+Expected:
 
-**Test response body integrity:**
-```bash
-response=$(curl -s -X POST http://localhost:3000/proxy/stripe/v1/charges \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "amount=5000&currency=usd")
-
-echo $response | jq .
-```
-
-**Expected response** (from mock):
-```json
-{
-  "id": "ch_mock_1735305600000",
-  "amount": 5000,
-  "currency": "usd",
-  "status": "succeeded"
-}
-```
-
-**Verify X-Forwarded-For header:**
-```bash
-curl -X POST http://localhost:3000/proxy/stripe/v1/customers \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -H "X-Forwarded-For: 203.0.113.1" \
-  -d "email=xff-test@example.com"
-```
-
-Mock server should receive `X-Forwarded-For` header with the original IP preserved.
+- Headers preserved
+- Response unchanged
 
 ---
 
-### Test 5: Structured Logging 📊
-
-Monitor the proxy logs to verify request tracking:
+### Test 6 — Concurrency Safety 🔀
 
 ```bash
-npm run dev
-```
-
-**Send a test request:**
-```bash
-curl -X POST http://localhost:3000/proxy/stripe/v1/customers \
+hey -z 5s -c 500 -m POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "email=logging-test@example.com"
+  -d "email=concurrent@example.com" \
+  http://localhost:3000/proxy/stripe/v1/customers
 ```
 
-**Expected log entry:**
+Expected:
+
+- Requests/sec ≈ **90–95**
+- No crashes or stalls
+
+---
+
+### Test 7 — Mixed Fast + Slow Traffic 🧪
+
+Slow:
+
+```bash
+hey -z 10s -c 5 -m POST http://localhost:3000/proxy/stripe/v1/slow
+```
+
+Fast:
+
+```bash
+hey -z 10s -c 50 -m POST http://localhost:3000/proxy/stripe/v1/customers
+```
+
+Expected:
+
+- Fast traffic unaffected
+- Slow requests timeout
+
+---
+
+### Test 8 — Structured Logging 📊
+
+```bash
+hey -n 50 -c 10 -m POST http://localhost:3000/proxy/stripe/v1/customers
+```
+
+Expected log:
+
 ```json
 {
-  "timestamp": "2025-12-27T10:30:00.000Z",
   "method": "POST",
   "path": "/proxy/stripe/v1/customers",
   "status": 200,
-  "duration_ms": 145
+  "duration_ms": 120
 }
 ```
 
----
+### Interpretation Guide
 
-### Test 6: Concurrent Request Handling 🔀
-
-Verify the proxy correctly handles concurrent requests:
-
-```bash
-# Send 10 concurrent requests
-for i in {1..10}; do
-  curl -X POST http://localhost:3000/proxy/stripe/v1/customers \
-    -H "Content-Type: application/x-www-form-urlencoded" \
-    -d "email=concurrent$i@example.com" &
-done
-wait
-```
-
-**Expected behavior:**
-- All requests complete successfully
-- Responses arrive in correct order
-- No race conditions or dropped requests
+| Symptom         | Meaning               |
+| --------------- | --------------------- |
+| ~90 RPS         | Rate limiting correct |
+| Growing latency | Queue working         |
+| 429s            | Queue cap enforced    |
+| 504s            | Timeout logic correct |
 
 ---
+
+## 
 
 ## Configuration Details 🔧
 
