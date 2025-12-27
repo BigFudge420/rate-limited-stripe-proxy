@@ -70,7 +70,7 @@ This proxy acts as a protective layer between your application and Stripe's API,
 
 ## How It Works 🔧
 
-1. **Request Arrives** - Client sends a request to `/post/stripe/*`
+1. **Request Arrives** - Client sends a request to `/proxy/stripe/*`
 2. **Token Check** - Proxy checks if a token is available from the bucket
 3. **Immediate Forward** - If token available, request is forwarded immediately
 4. **Queue** - If no token, request is added to the queue
@@ -295,7 +295,7 @@ Verify that the proxy enforces the configured rate limit correctly.
 # This script sends 900 requests and measures total time
 time (
   for i in {1..900}; do
-    curl -s -X POST http://localhost:3000/post/stripe/v1/customers \
+    curl -s -X POST http://localhost:3000/proxy/stripe/v1/customers \
       -H "Content-Type: application/x-www-form-urlencoded" \
       -d "email=customer$i@example.com" > /dev/null &
   done
@@ -333,7 +333,7 @@ results_file="test_results.txt"
 
 for i in {1..1200}; do
   (
-    response=$(curl -s -w "\n%{http_code}" -X POST http://localhost:3000/post/stripe/v1/customers \
+    response=$(curl -s -w "\n%{http_code}" -X POST http://localhost:3000/proxy/stripe/v1/customers \
       -H "Content-Type: application/x-www-form-urlencoded" \
       -d "email=customer$i@example.com")
     status=$(echo "$response" | tail -n1)
@@ -355,7 +355,7 @@ echo "429 Too Many Requests: $(grep -c "^429$" $results_file)"
 
 **Verify 429 response:**
 ```bash
-curl -i -X POST http://localhost:3000/post/stripe/v1/customers \
+curl -i -X POST http://localhost:3000/proxy/stripe/v1/customers \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "email=overflow@example.com"
 ```
@@ -377,7 +377,7 @@ Verify the proxy returns 504 when upstream is slow.
 
 **Using the mock server's slow endpoint:**
 ```bash
-curl -i -X POST http://localhost:3000/post/stripe/v1/slow \
+curl -i -X POST http://localhost:3000/proxy/stripe/v1/slow \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "test=timeout"
 ```
@@ -396,7 +396,7 @@ Content-Type: application/json
 
 **Measure actual timeout duration:**
 ```bash
-time curl -X POST http://localhost:3000/post/stripe/v1/slow \
+time curl -X POST http://localhost:3000/proxy/stripe/v1/slow \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "test=timeout"
 ```
@@ -411,7 +411,7 @@ Verify headers and response bodies are correctly forwarded.
 
 **Test custom header forwarding:**
 ```bash
-curl -i -X POST http://localhost:3000/post/stripe/v1/customers \
+curl -i -X POST http://localhost:3000/proxy/stripe/v1/customers \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -H "X-Custom-Header: test-value" \
   -H "X-Request-Id: req_12345" \
@@ -422,7 +422,7 @@ curl -i -X POST http://localhost:3000/post/stripe/v1/customers \
 
 **Test response body integrity:**
 ```bash
-response=$(curl -s -X POST http://localhost:3000/post/stripe/v1/charges \
+response=$(curl -s -X POST http://localhost:3000/proxy/stripe/v1/charges \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "amount=5000&currency=usd")
 
@@ -441,7 +441,7 @@ echo $response | jq .
 
 **Verify X-Forwarded-For header:**
 ```bash
-curl -X POST http://localhost:3000/post/stripe/v1/customers \
+curl -X POST http://localhost:3000/proxy/stripe/v1/customers \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -H "X-Forwarded-For: 203.0.113.1" \
   -d "email=xff-test@example.com"
@@ -461,7 +461,7 @@ npm run dev
 
 **Send a test request:**
 ```bash
-curl -X POST http://localhost:3000/post/stripe/v1/customers \
+curl -X POST http://localhost:3000/proxy/stripe/v1/customers \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "email=logging-test@example.com"
 ```
@@ -471,7 +471,7 @@ curl -X POST http://localhost:3000/post/stripe/v1/customers \
 {
   "timestamp": "2025-12-27T10:30:00.000Z",
   "method": "POST",
-  "path": "/post/stripe/v1/customers",
+  "path": "/proxy/stripe/v1/customers",
   "status": 200,
   "duration_ms": 145
 }
@@ -486,7 +486,7 @@ Verify the proxy correctly handles concurrent requests:
 ```bash
 # Send 10 concurrent requests
 for i in {1..10}; do
-  curl -X POST http://localhost:3000/post/stripe/v1/customers \
+  curl -X POST http://localhost:3000/proxy/stripe/v1/customers \
     -H "Content-Type: application/x-www-form-urlencoded" \
     -d "email=concurrent$i@example.com" &
 done

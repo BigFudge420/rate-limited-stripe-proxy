@@ -4,15 +4,15 @@ import handleUpstream from './handleUpstream'
 
 let processing = false
 
-const processQueue = async () => {
+const processQueue = () => {
     if (processing) return
     processing = true
 
     try {
-        while (queue.length > 0){
-            if (!tryConsume()) break
-
+        let fired = 0
+        while (queue.length > 0 && tryConsume() && fired < 5) {
             const item = queue.shift()!
+            fired++
             handleUpstream(item.req, item.res)
         }
     }

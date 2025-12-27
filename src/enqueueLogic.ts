@@ -13,7 +13,7 @@ const queue : QueuedRequest[] = []
 const enqueue = (req : Request, res : Response) => {
     if (queue.length >= QUEUE_MAX_DEPTH) {
         res.setHeader('Retry-After', '10')
-        res.status(429).json({error : "Rate limit exceeded"})
+        return res.status(429).json({error : "Rate limit exceeded"})
     }
 
     queue.push({req, res, enqueuedAt : Date.now()})

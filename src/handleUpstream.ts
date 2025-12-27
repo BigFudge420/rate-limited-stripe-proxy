@@ -15,11 +15,12 @@ const handleUpstream = async (req : Request, res : Response, start = Date.now() 
 
     const upstreamURL = buildURL(req)
     const headers = buildHeaders(req)
-
-    const body = req.body && req.body.length > 0 ? req.body : undefined
+    
+    const body = (req.body as Buffer)?.length > 0 ? req.body : undefined
 
     res.on('finish', () => {
         log(req, res.statusCode, start)
+        processQueue()
     })
 
     try {
@@ -52,8 +53,6 @@ const handleUpstream = async (req : Request, res : Response, start = Date.now() 
         else {
             res.status(502).json({error : "Upstream unavailable"})
         }
-    } finally {
-        processQueue()
     }
 }
 
