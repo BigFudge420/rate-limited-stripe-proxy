@@ -10,7 +10,7 @@ const processQueue = () => {
 
     try {
         let fired = 0
-        while (queue.length > 0 && tryConsume() && fired < 5) {
+        while (queue.length > 0 && tryConsume() && fired < 10) {
             const item = queue.shift()!
             fired++
             handleUpstream(item.req, item.res)
