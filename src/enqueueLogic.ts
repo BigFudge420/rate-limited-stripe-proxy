@@ -11,7 +11,7 @@ const QUEUE_MAX_DEPTH = config.queueMaxDepth
 const queue : QueuedRequest[] = [] 
 
 const enqueue = (req : Request, res : Response) => {
-    if (queue.length > QUEUE_MAX_DEPTH) {
+    if (queue.length >= QUEUE_MAX_DEPTH) {
         res.setHeader('Retry-After ', '10')
         res.status(429).json({error : "Rate limit exceeded"})
     }
