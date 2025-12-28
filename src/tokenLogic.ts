@@ -7,7 +7,7 @@ let lastRefill: number = Date.now()
 
 const refillTokens = (now = Date.now()) => {
     const elapsedTimeMS = now - lastRefill
-    
+
     if (elapsedTimeMS <= 0) return
 
     const refill = (elapsedTimeMS/1000) * REFILL_RATE

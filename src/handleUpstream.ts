@@ -2,7 +2,6 @@ import { Request, Response } from "express"
 import config from './config'
 import buildURL from './buildURL'
 import buildHeaders from './buildHeaders'
-import processQueue from './processQueue'
 import log from "./log"
 
 const handleUpstream = async (req : Request, res : Response, start = Date.now() ) => {
@@ -20,7 +19,6 @@ const handleUpstream = async (req : Request, res : Response, start = Date.now() 
 
     res.on('finish', () => {
         log(req, res.statusCode, start)
-        processQueue()
     })
 
     try {

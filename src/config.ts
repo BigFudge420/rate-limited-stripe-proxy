@@ -7,7 +7,8 @@ interface Config {
     rateLimitPerSec : number,
     queueMaxDepth : number,
     upstreamTimeoutMS : number,
-    port : number
+    port : number,
+    maxInflight : number
 }
 
 const config : Config = {
@@ -17,7 +18,8 @@ const config : Config = {
     rateLimitPerSec : process.env.RATE_LIMIT_PER_SEC ? Number(process.env.RATE_LIMIT_PER_SEC) : 90,
     queueMaxDepth : Number(process.env.QUEUE_MAX_DEPTH) || 1000,
     upstreamTimeoutMS : Number(process.env.UPSTREAM_TIMEOUT_MS) || 5000, 
-    port : Number(process.env.PORT) || 3000
+    port : Number(process.env.PORT) || 3000,
+    maxInflight : Number(process.env.MAX_INFLIGHT) || 10
 }
 
 if (isNaN(config.rateLimitPerSec) || config.rateLimitPerSec <= 0) {

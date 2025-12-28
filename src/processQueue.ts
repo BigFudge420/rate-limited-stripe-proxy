@@ -1,24 +1,35 @@
 import {queue} from './enqueueLogic'
 import {tryConsume} from './tokenLogic'
 import handleUpstream from './handleUpstream'
+import config from './config'
 
 let processing = false
 
-const processQueue = () => {
+let inflight = 0
+const MAX_INFLIGHT = config.maxInflight
+
+const processQueue = async () => {
     if (processing) return
     processing = true
-
+    
     try {
-        let fired = 0
-        while (queue.length > 0 && tryConsume() && fired < 10) {
+        while (queue.length > 0 && inflight < MAX_INFLIGHT) {
+            const now = Date.now()
+            
+            if (!tryConsume()) break
             const item = queue.shift()!
-            fired++
-            handleUpstream(item.req, item.res)
+            console.log('clearing queue')
+
+            inflight++
+            handleUpstream(item.req, item.res).catch(() => {}).finally(() => {
+                inflight--
+                setImmediate(processQueue)
+            })
         }
-    }
-    finally {
+    } finally {
         processing = false
     }
+
 }
 
 export default processQueue
