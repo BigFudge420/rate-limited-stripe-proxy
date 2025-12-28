@@ -26,4 +26,14 @@ const tryConsume = () : boolean => {
     return false
 }
 
-export {tryConsume, refillTokens}
+const drainBucket = () => {
+    return tokens = 0
+}
+
+const getTokenState = () => ({
+    tokens,
+    capacity: CAPACITY,
+    lastRefill: lastRefill
+})
+
+export {tryConsume, refillTokens, getTokenState, drainBucket}
