@@ -38,14 +38,6 @@
   - [4. Run in development mode](#4-run-in-development-mode-)
   - [5. Build for production](#5-build-for-production-)
   - [6. Run the production build](#6-run-the-production-build-)
-- [Testing Strategy Overview](#testing-strategy-overview-)
-  - [Setting Up a Mock Upstream Server](#setting-up-a-mock-upstream-server-)
-  - [Test 1: Rate Limiting Accuracy](#test-1-rate-limiting-accuracy-)
-  - [Test 2: Queue Overflow Handling](#test-2-queue-overflow-handling-)
-  - [Test 3: Timeout Handling](#test-3-timeout-handling-)
-  - [Test 4: Passthrough Correctness](#test-4-passthrough-correctness-)
-  - [Test 5: Structured Logging](test-5-structured-logging-)
-  - [Test 6: Concurrent Request Handling](test-6-concurrent-request-handling-)
 - [Configuration Details](#configuration-details-)
 - [Error Responses](#error-responses-)
 
@@ -152,6 +144,7 @@ PORT=3000
 | `QUEUE_MAX_DEPTH` | Maximum queued requests | `1000` | ❌ No |
 | `UPSTREAM_TIMEOUT_MS` | Upstream request timeout (ms) | `5000` | ❌ No |
 | `PORT` | Server port | `3000` | ❌ No |
+| `MAX_INFLIGHT` | Maximum inflight requests at any given time | `10` | ❌ No | 
 
 ---
 
