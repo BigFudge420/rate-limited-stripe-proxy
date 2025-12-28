@@ -17,6 +17,7 @@
 ![Prettier](https://img.shields.io/badge/Prettier-F7B93E?style=flat&logo=prettier&logoColor=black)
 ![ESLint](https://img.shields.io/badge/ESLint-4B32C3?style=flat&logo=eslint&logoColor=white)
 ![Stripe](https://img.shields.io/badge/Stripe-008CDD?style=flat&logo=stripe&logoColor=white)
+![Jest](https://img.shields.io/badge/Jest-323330?style=for-the-badge&logo=Jest&logoColor=white)
 
 </div>
 
@@ -91,6 +92,7 @@ Client Request → Token Bucket → [Available? → Forward]
 - **tsx** - TypeScript execution for development
 - **ESLint** - Code linting
 - **Prettier** - Code formatting
+- **Jest** - Testing
 
 ---
 
@@ -211,6 +213,12 @@ This runs the compiled JavaScript from `dist/server.js`.
 
 ---
 
+## Testing
+
+More comprehensive and complete tests will be implemented later down the road 
+
+---
+
 ## Configuration Details 🔧
 
 ### Token Bucket Algorithm
@@ -226,7 +234,7 @@ The proxy uses a **token bucket** algorithm for rate limiting:
 
 - **Maximum Depth**: Configurable via `QUEUE_MAX_DEPTH`
 - **FIFO Processing**: First-in, first-out processing order
-- **Automatic Processing**: Queue processes automatically as tokens become available
+- **Automatic Processing**: Queue processes automatically as tokens become available and maximum number of inflight requests have not been hit
 - **Overflow Handling**: Returns `429 Too Many Requests` when queue is full
 
 ### Header Handling
@@ -279,6 +287,15 @@ Returned when the upstream request exceeds `UPSTREAM_TIMEOUT_MS`.
   "error": "Upstream timeout"
 }
 ```
+
+---
+
+## Roadmap
+
+- **/GET health endpoint**
+- **Graceful Shutdown**
+- **Persistence Queue**
+- **Idempotency awareness**
 
 ---
 
